@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts">
-import Camera from './components/Camera/index.vue';
+import Camera from 'simple-vue-camera';
 import { defineComponent, ref } from 'vue';
 import noBackImage from './util/noBack';
 
@@ -28,17 +28,13 @@ export default defineComponent({
 
     const snapshot = async () => {
       if (!camera.value) return;
-      const res = await camera.value?.captureImage();
+      const blob = await camera.value?.snapshot();
 
-      if (!res) return;
+      if (!blob) return;
 
-      const { URL } = res;
+      const URL = await blobToBase64(blob);
 
       console.log(URL);
-
-      window.open(URL as string);
-
-      // console.log(image_base64);
 
       const result = await axios.post(
         'http://127.0.0.1:6001/ethglobal-wat23-ai-hack/us-central1/nounifyMyFace',
@@ -81,6 +77,10 @@ export default defineComponent({
   width: 500px;
   height: 500px;
   position: relative;
+
+  video {
+    transform: scaleX(-1);
+  }
 
   .noun-image {
     position: absolute;
