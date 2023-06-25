@@ -3,6 +3,9 @@
     <wagmi-connect />
     <div class="camera-main-container">
       <div v-if="isLoading" class="loader"><div /></div>
+      <div v-if="showCamera" class="prompt">
+        Click on glasses to make an avatar
+      </div>
       <camera
         v-if="showCamera"
         ref="camera"
@@ -56,7 +59,7 @@ export default defineComponent({
         const URL = await blobToBase64(blob);
 
         const result = await axios.post(
-          'http://127.0.0.1:6001/ethglobal-wat23-ai-hack/us-central1/nounifyMyFace',
+          'https://us-central1-ethglobal-wat23-ai-hack.cloudfunctions.net/nounifyMyFace',
           {
             // image_base64,
             image_base64: URL,
@@ -128,9 +131,21 @@ export default defineComponent({
 
 .camera-main-container {
   width: 512px;
+  max-width: calc(100vw - 20px);
   height: 512px;
   position: relative;
   margin: 10px;
+
+  .prompt {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    z-index: 20;
+    font-weight: bold;
+    font-size: 20px;
+  }
 
   video {
     transform: scaleX(-1);
@@ -138,10 +153,10 @@ export default defineComponent({
 
   .noun-image {
     position: absolute;
-    top: 0;
     left: 0;
-    right: 0;
-    height: 100%;
+    top: 0;
+    margin: auto;
+    width: 100%;
     opacity: 0.5;
     cursor: pointer;
   }
