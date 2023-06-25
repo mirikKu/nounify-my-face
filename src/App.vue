@@ -34,11 +34,10 @@ import NounButton from './components/NounButton.vue';
 import Camera from 'simple-vue-camera';
 import { defineComponent, ref } from 'vue';
 
-import { blobToBase64 } from './util';
+import { blobToBase64, sendImage } from './util';
 import axios from 'axios';
 import { computed } from '@vue/reactivity';
 import { useAccount } from 'use-wagmi';
-import { sendImage } from './util/sendImage';
 
 export default defineComponent({
   components: { Camera, WagmiConnect, NounButton },
