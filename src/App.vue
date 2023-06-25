@@ -59,16 +59,14 @@ export default defineComponent({
         const URL = await blobToBase64(blob);
 
         const result = await axios.post(
-          'https://us-central1-ethglobal-wat23-ai-hack.cloudfunctions.net/nounifyMyFace',
+          // 'https://us-central1-ethglobal-wat23-ai-hack.cloudfunctions.net/nounifyMyFace',
+          'http://127.0.0.1:6001/ethglobal-wat23-ai-hack/us-central1/nounifyMyFace',
           {
-            // image_base64,
             image_base64: URL,
           },
           {
             withCredentials: false,
-            // mode: 'no-cors',
             headers: {
-              'Access-Control-Allow-Origin': '*',
               'Content-Type': 'application/json',
             },
           },
