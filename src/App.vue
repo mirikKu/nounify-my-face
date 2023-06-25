@@ -1,63 +1,110 @@
 <template>
-  <div class="camera-main-container">
-    <camera
-      class="camera"
-      ref="camera"
-      :resolution="{ width: 1000, height: 1000 }"
-      :autoplay="true"
-    >
-    </camera>
-    <button @click="snapshot">Snapshot</button>
-    <img class="noun-image" src="./assets/noun.svg" />
-    <!-- <img :src="noBackImage" /> -->
+  <div class="nounify-my-face">
+    <wagmi-connect />
+    <div class="camera-main-container">
+      <div v-if="isLoading" class="loader"><div /></div>
+      <camera
+        v-if="showCamera"
+        ref="camera"
+        :resolution="{ width: 1000, height: 1000 }"
+        :autoplay="true"
+      />
+      <img
+        v-if="showCamera"
+        class="noun-image"
+        src="./assets/noun.svg"
+        @click="snapshot"
+      />
+      <img
+        v-if="generatedAvatar"
+        class="avatar-result"
+        :src="generatedAvatar"
+        @click="generatedAvatar = ''"
+      />
+    </div>
+    <noun-button v-if="generatedAvatar" :disabled="!isConnected" @click="send">
+      ✉️ Send it to me
+    </noun-button>
   </div>
 </template>
 
 <script lang="ts">
+import WagmiConnect from './components/WagmiConnect.vue';
+import NounButton from './components/NounButton.vue';
 import Camera from 'simple-vue-camera';
 import { defineComponent, ref } from 'vue';
-import noBackImage from './util/noBack';
 
 import { blobToBase64 } from './util';
 import axios from 'axios';
+import { computed } from '@vue/reactivity';
+import { useAccount } from 'use-wagmi';
+import { sendImage } from './util/sendImage';
 
 export default defineComponent({
-  components: { Camera },
+  components: { Camera, WagmiConnect, NounButton },
   setup() {
     const camera = ref<InstanceType<typeof Camera>>();
 
     const snapshot = async () => {
-      if (!camera.value) return;
-      const blob = await camera.value?.snapshot();
+      isLoading.value = true;
 
-      if (!blob) return;
+      try {
+        if (!camera.value) return;
+        const blob = await camera.value?.snapshot();
 
-      const URL = await blobToBase64(blob);
+        if (!blob) return;
 
-      console.log(URL);
+        const URL = await blobToBase64(blob);
 
-      const result = await axios.post(
-        'http://127.0.0.1:6001/ethglobal-wat23-ai-hack/us-central1/nounifyMyFace',
-        {
-          // image_base64,
-          image_base64: URL,
-        },
-        {
-          withCredentials: false,
-          // mode: 'no-cors',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
+        const result = await axios.post(
+          'http://127.0.0.1:6001/ethglobal-wat23-ai-hack/us-central1/nounifyMyFace',
+          {
+            // image_base64,
+            image_base64: URL,
           },
-        },
-      );
+          {
+            withCredentials: false,
+            // mode: 'no-cors',
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Content-Type': 'application/json',
+            },
+          },
+        );
 
-      console.log(result.data);
+        generatedAvatar.value = result.data.result_image;
+      } catch (err) {
+        console.error(err);
+      } finally {
+        isLoading.value = false;
+      }
     };
+
+    const send = () => {
+      if (!generatedAvatar.value || !address.value) return;
+      isLoading.value = true;
+      sendImage(address.value, generatedAvatar.value).finally(() => {
+        isLoading.value = false;
+      });
+    };
+
+    const isLoading = ref(false);
+    const generatedAvatar = ref<string>();
+    const showCamera = computed(
+      () => !isLoading.value && !generatedAvatar.value,
+    );
+
+    const { isConnected, address } = useAccount();
+
     return {
       camera,
+      isLoading,
+      generatedAvatar,
+      showCamera,
       snapshot,
-      noBackImage: `data:image/png;base64,${noBackImage}`,
+      send,
+      isConnected,
+      address,
     };
   },
 });
@@ -73,10 +120,18 @@ export default defineComponent({
   margin-top: 60px;
 }
 
+.nounify-my-face {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 .camera-main-container {
-  width: 500px;
-  height: 500px;
+  width: 512px;
+  height: 512px;
   position: relative;
+  margin: 10px;
 
   video {
     transform: scaleX(-1);
@@ -89,6 +144,43 @@ export default defineComponent({
     right: 0;
     height: 100%;
     opacity: 0.5;
+    cursor: pointer;
+  }
+
+  .avatar-result {
+    width: 100%;
+    height: 100%;
+  }
+
+  .loader {
+    position: absolute;
+    z-index: 50;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    > div {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 5px solid #fff;
+      border-top-color: #000;
+      animation: spin 1s ease-in-out infinite;
+    }
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
   }
 }
 </style>
