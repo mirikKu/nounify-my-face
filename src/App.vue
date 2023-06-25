@@ -1,16 +1,68 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+  <div class="camera-main-container">
+    <camera
+      class="camera"
+      ref="camera"
+      :resolution="{ width: 1000, height: 1000 }"
+      :autoplay="true"
+    >
+    </camera>
+    <button @click="snapshot">Snapshot</button>
+    <img class="noun-image" src="./assets/noun.svg" />
+    <!-- <img :src="noBackImage" /> -->
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import Camera from './components/Camera/index.vue';
+import { defineComponent, ref } from 'vue';
+import noBackImage from './util/noBack';
+
+import { blobToBase64 } from './util';
+import axios from 'axios';
 
 export default defineComponent({
-  name: 'App',
-  components: {
-    HelloWorld,
+  components: { Camera },
+  setup() {
+    const camera = ref<InstanceType<typeof Camera>>();
+
+    const snapshot = async () => {
+      if (!camera.value) return;
+      const res = await camera.value?.captureImage();
+
+      if (!res) return;
+
+      const { URL } = res;
+
+      console.log(URL);
+
+      window.open(URL as string);
+
+      // console.log(image_base64);
+
+      const result = await axios.post(
+        'http://127.0.0.1:6001/ethglobal-wat23-ai-hack/us-central1/nounifyMyFace',
+        {
+          // image_base64,
+          image_base64: URL,
+        },
+        {
+          withCredentials: false,
+          // mode: 'no-cors',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      console.log(result.data);
+    };
+    return {
+      camera,
+      snapshot,
+      noBackImage: `data:image/png;base64,${noBackImage}`,
+    };
   },
 });
 </script>
@@ -23,5 +75,20 @@ export default defineComponent({
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+.camera-main-container {
+  width: 500px;
+  height: 500px;
+  position: relative;
+
+  .noun-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    opacity: 0.5;
+  }
 }
 </style>
